@@ -37,4 +37,10 @@ namespace asx
 	 * @param _text ascii string.
 	*/
 	void set_clipboard_text(const std::string_view _text);
+
+	/**
+	 * @brief Gets the path to the running executable.
+	 * @return File path to running executable, or an empty string if something went wrong.
+	*/
+	std::string get_current_executable_path();
 };

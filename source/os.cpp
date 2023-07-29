@@ -6,6 +6,8 @@
 #include <asx/assert.hpp>
 #include <asx/logging.hpp>
 
+#include <numeric>
+
 namespace asx
 {
 	OSApplicationData& os_application_data()
@@ -205,7 +207,7 @@ namespace asx
 		{
 			// Error!
 			// TODO : Report error (?)
-			ASX_LOG_ERROR("Failed to preform SetClipboardData() (error code {})", GetLastError());
+			ASX_LOG_ERROR("Failed to perform SetClipboardData() (error code {})", GetLastError());
 		};
 #else
 		ASX_LOG_WARN("set_clipboard_text was called but no implementation exists for the current platform");
@@ -213,3 +215,29 @@ namespace asx
 	};
 
 };
+
+namespace asx
+{
+	std::string get_current_executable_path()
+	{
+#ifdef ASX_OS_WINDOWS
+		// Buffer size clamped between 512 and 1024 bytes
+		auto _buffer = std::array<char, std::clamp(MAX_PATH * 4, 512, 1024)> {};
+		const auto _result = GetModuleFileNameA(NULL, _buffer.data(), static_cast<DWORD>(_buffer.size()));
+		if (_result != 0)
+		{
+			// Return truncated string
+			return std::string(_buffer.data(), static_cast<size_t>(_result));
+		}
+		else
+		{
+			// Error occured
+			ASX_LOG_ERROR("Failed to perform GetModuleFileNameA() (error code {})", GetLastError());
+			return std::string{};
+		};
+#else
+		// TODO : Linux/Mac
+		return std::string{};
+#endif
+	};
+}

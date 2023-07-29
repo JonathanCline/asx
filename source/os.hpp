@@ -40,4 +40,6 @@ namespace asx
 	OSApplicationData& os_application_data();
 
 	std::string get_clipboard_text();
+
+	std::string get_current_executable_path();
 }
