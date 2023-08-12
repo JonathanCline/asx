@@ -226,7 +226,7 @@ namespace asx
 
 namespace asx
 {
-	size_t get_stack_trace(std::span<StackFrame> _outBuffer)
+	size_t get_stack_trace(std::span<SourceLocation> _outBuffer, size_t _skipFrames)
 	{
 		ASX_LOG_WARN("Called get_stack_trace() but no implementation exists for the current platform.");
 		return 0;

@@ -17,7 +17,7 @@
 	{
 		void debug_break_impl()
 		{
-			::raise(SIGBREAK);
+			::raise(SIGTRAP);
 		};
 	};
 #endif

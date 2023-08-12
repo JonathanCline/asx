@@ -7,9 +7,13 @@
 
 #if defined(WIN32) || defined(_WIN32)
 	#define ASX_OS_WINDOWS
+#elif defined(__linux__)
+	#define ASX_OS_LINUX
 #else
 #error Finish me
 #endif
+
+
 
 namespace asx
 {

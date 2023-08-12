@@ -51,7 +51,7 @@ namespace asx
 };
 
 
-#define ASX_FAIL(reasonFormat, ...) { ::asx::notify_failure(::asx::format_or_pass(reasonFormat, __VA_ARGS__)); ASX_DEBUG_BREAK(); ::asx::exit(1); }
+#define ASX_FAIL(reasonFormat, ...) { ::asx::notify_failure(::asx::format_or_pass(reasonFormat __VA_OPT__(,) __VA_ARGS__)); ASX_DEBUG_BREAK(); ::asx::exit(1); }
 
 // TODO : Allow disabling of the check (NDEBUG?)
 #ifndef NDEBUG
