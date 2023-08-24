@@ -28,7 +28,7 @@ namespace asx
 	struct local_time_traits
 	{
 #ifdef ASX_OS_WINDOWS
-		using local_time = std::chrono::zoned_seconds;
+		using local_time = std::chrono::zoned_time<std::chrono::milliseconds>;
 #else
 		using local_time = std::chrono::time_point<local_time_traits, std::chrono::seconds>;
 #endif

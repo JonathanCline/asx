@@ -1,6 +1,8 @@
 #include <asx/fmt/chrono.hpp>
 
-#include <ctime>
+#ifndef ASX_OS_WINDOWS
+    #include <ctime>
+#endif
 
 namespace asx
 {
@@ -9,6 +11,9 @@ namespace asx
         namespace ch = std::chrono;
         using namespace std::chrono_literals;
 
+#ifdef ASX_OS_WINDOWS
+        return asx::format("%D %T", _time);
+#else
         const auto _timeSinceEpoch = _time.time_since_epoch();
         ch::seconds _timeSinceEpochSeconds = 0s;
         ch::nanoseconds _timeSinceEpochNanoseconds = 0ns;
@@ -43,5 +48,6 @@ namespace asx
         // Trim string and return
         _buffer.resize(_wroteCount);
         return _buffer;
+#endif
     };
 };
