@@ -1,17 +1,26 @@
 #pragma once
 
-/** @file Centralized format library include */
+/**
+ * @file
+ * @brief Centralized format library include
+*/
+
+#include <jclib/feature.h>
 
 #include <format>
 #include <concepts>
 
 namespace asx
 {
+	/**
+	 * @brief Concept satisfied by types with a formatter specialization defined.
+	*/
 	template <typename T>
 	concept cx_formattable = requires(const T & v)
 	{
 		std::formatter<T, char>{};
 	};
+
 
 	inline auto format(const std::string_view _fmt, const cx_formattable auto&... _args)
 	{
