@@ -6,6 +6,8 @@
 
 #include <span>
 #include <mutex>
+#include <memory>
+#include <algorithm>
 
 #ifdef ASX_OS_WINDOWS
 
@@ -222,11 +224,51 @@ namespace asx
 	};
 };
 
+#elif defined(ASX_OS_LINUX)
+
+#include <execinfo.h>
+#include <stdio.h>
+
+namespace asx
+{
+	size_t get_stack_trace(std::span<SourceLocation> _outBuffer, size_t _skipFrames)
+	{
+		// Adding one to this as the get_stack_trace() function has a habit of showing up here
+		++_skipFrames;
+
+		auto _callstack = std::vector<void*>(_outBuffer.size() + _skipFrames);
+		int _frameCount = backtrace(_callstack.data(), static_cast<int>(_callstack.size()));
+		
+		// If we found fewer frames than were desired to be skipped, we can return 0  
+		if(_frameCount <= static_cast<int>(_skipFrames))
+		{
+			return 0;
+		};
+
+		// Handle symbols		
+		struct unique_string_array_deleter { 
+			void operator()(char** _strings) noexcept
+			{
+				free(_strings);
+			};
+		};
+		using unique_string_array = std::unique_ptr<char*[], unique_string_array_deleter>; 
+		auto _stringStorage = unique_string_array(backtrace_symbols(_callstack.data(), _frameCount));
+
+		// Write into the span
+		auto _strings = std::span<char*>(_stringStorage.get(), static_cast<size_t>(_frameCount));
+		for (size_t n = _skipFrames; n != _strings.size(); ++n) {
+			printf("%s\n", _strings[n]);
+		}
+		return 0;
+	};
+};
+
 #else
 
 namespace asx
 {
-	size_t get_stack_trace(std::span<StackFrame> _outBuffer)
+	size_t get_stack_trace(std::span<SourceLocation> _outBuffer, size_t _skipFrames)
 	{
 		ASX_LOG_WARN("Called get_stack_trace() but no implementation exists for the current platform.");
 		return 0;

@@ -69,7 +69,7 @@ namespace asx
 	{
 	public:
 
-		const char* what() const override
+		const char* what() const noexcept override
 		{
 			return this->what_.c_str();
 		};

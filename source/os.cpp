@@ -7,6 +7,7 @@
 #include <asx/logging.hpp>
 
 #include <numeric>
+#include <filesystem>
 
 namespace asx
 {
@@ -236,8 +237,8 @@ namespace asx
 			return std::string{};
 		};
 #else
-		// TODO : Linux/Mac
-		return std::string{};
+		// TODO : Mac
+		return std::filesystem::canonical("/proc/self/exe").string();
 #endif
 	};
 }

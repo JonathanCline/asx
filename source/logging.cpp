@@ -2,6 +2,9 @@
 
 #include <asx/exclusive.hpp>
 
+#include <span>
+#include <mutex>
+#include <string>
 #include <fstream>
 #include <ostream>
 #include <sstream>
@@ -74,10 +77,6 @@ namespace asx
 		std::streambuf* rdbuf(std::streambuf* _buf) const
 		{
 			return this->stream_->get()->rdbuf(_buf);
-		};
-		void set_rdbuf(std::streambuf* _buf)
-		{
-			this->stream_->get()->set_rdbuf(_buf);
 		};
 
 		auto stream()
