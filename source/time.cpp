@@ -7,7 +7,7 @@ namespace asx
 	{
 		namespace ch = std::chrono;
 #ifdef ASX_OS_WINDOWS
-		return std::chrono::time_point_cast<utc_time::duration>(utc_clock::now());
+		return std::chrono::time_point_cast<utc_time::duration>(std::chrono::utc_clock::now());
 #else
 		// Convert into time_t
 		const auto _timeT = ch::system_clock::to_time_t(ch::system_clock::now());
@@ -35,7 +35,7 @@ namespace asx
 	{
 		namespace ch = std::chrono;
 #ifdef ASX_OS_WINDOWS
-		auto _systemTime = std::chrono::clock_cast<std::chrono::system_clock>(_time);
+		auto _systemTime = std::chrono::clock_cast<std::chrono::system_clock>(_utcTime);
 		auto _localTime = std::chrono::zoned_time(std::chrono::current_zone(), _systemTime);
 		return _localTime;
 #else
