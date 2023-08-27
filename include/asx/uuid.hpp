@@ -2,21 +2,51 @@
 
 /** @file */
 
+#include <span>
 #include <array>
 #include <string>
 #include <cstddef>
 #include <cstdint>
 #include <compare>
+#include <algorithm>
 #include <string_view>
 
 namespace asx
 {
 	struct uuid
 	{
+	private:
+
+		using storage_type = std::array<std::byte, 16>;
+
 	public:
 
 		constexpr auto operator<=>(const uuid& rhs) const = default;
 
+		/**
+		 * @brief Gets the size of the UUID in bytes.
+		 * @return Size in bytes.
+		*/
+		constexpr static size_t size_bytes()
+		{
+			return sizeof(storage_type);
+		};
+
+		/**
+		 * @brief Returns an array of bytes representing the uuid value.
+		 * @return Array of bytes with UUID encoded.
+		*/
+		constexpr storage_type to_bytes() const
+		{
+			return this->bytes_;
+		};
+
+		constexpr static bool from_bytes(std::span<const std::byte> _bytes, uuid& _outValue)
+		{
+			if (_bytes.size() < uuid::size_bytes()) { return false; };
+			std::copy(_bytes.begin(), _bytes.begin() + uuid::size_bytes(), _outValue.bytes_.begin());
+			return true;
+		};
 		
 		constexpr bool is_null() const
 		{
@@ -42,15 +72,6 @@ namespace asx
 
 		std::string str() const;
 
-		/**
-		 * @brief Gets the size of the UUID in bytes.
-		 * @return Size in bytes.
-		*/
-		constexpr size_t size_bytes() const
-		{
-			return this->bytes_.size();
-		};
-
 		constexpr uuid() noexcept = default;
 	private:
 
@@ -64,7 +85,7 @@ namespace asx
 			this->bytes_.at(n) = _byte;
 		};
 		
-		std::array<std::byte, 16> bytes_;
+		storage_type bytes_;
 
 	};
 };
