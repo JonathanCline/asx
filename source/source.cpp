@@ -141,7 +141,7 @@ namespace asx
 						// Increment our out index so we write to the next frame.
 						++_outIndex;
 					}
-					else
+					else if(_err != 487)
 					{
 						asx::log_error(
 							asx::format(
