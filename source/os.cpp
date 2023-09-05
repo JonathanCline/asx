@@ -236,9 +236,19 @@ namespace asx
 			ASX_LOG_ERROR("Failed to perform GetModuleFileNameA() (error code {})", GetLastError());
 			return std::string{};
 		};
-#else
-		// TODO : Mac
+#elif defined(ASX_OS_LINUX)
 		return std::filesystem::canonical("/proc/self/exe").string();
+#else
+#error "Not implemented for target system"
+#endif
+	};
+
+	int get_system_dpi()
+	{
+#ifdef ASX_OS_WINDOWS
+		return GetDpiForSystem();
+#else
+#error "Implement me!!!!"
 #endif
 	};
 }

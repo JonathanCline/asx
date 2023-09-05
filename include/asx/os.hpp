@@ -47,4 +47,10 @@ namespace asx
 	 * @return File path to running executable, or an empty string if something went wrong.
 	*/
 	std::string get_current_executable_path();
+
+	/**
+	 * @brief Gets the DPI for the current system.
+	 * @return DPI value on success, -1 on error.
+	*/
+	int get_system_dpi();
 };

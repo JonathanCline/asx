@@ -9,8 +9,8 @@
 #define NOMINMAX
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
-#include <dbghelp.h>
-
+#include <DbgHelp.h>
+#include <WinUser.h>
 #pragma comment(lib, "DbgHelp")
 #endif
 
