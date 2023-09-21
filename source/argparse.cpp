@@ -122,15 +122,37 @@ namespace asx
 
 namespace asx
 {
-	inline void assert_valid_option_name(std::string_view _testName, const std::string* _assertPretext = nullptr)
+	bool ArgumentParser::ArgumentDefinition::is_enough_values(uint8_t _count) const
+	{
+		switch (this->multi_value_mode)
+		{
+		case MultiValueMode::fixed:
+			return _count >= this->nvals;
+		case MultiValueMode::variable:
+			return true;
+		case MultiValueMode::one_or_more:
+			return _count >= 1;
+		default:
+			return true;
+		};
+	};
+};
+
+namespace asx
+{
+	inline bool check_valid_option_name(std::string_view _testName, std::string* _outErrorMessage, const std::string* _assertPretext = nullptr)
 	{
 		// Ensure this starts with '-' char(s)
 		if (!_testName.starts_with('-'))
 		{
 			// Text never begins, for now this will be an invalid option name
-			ASX_FAIL("Invalid option name \"{}\",{} must start with '-' or '--'",
-				_testName,
-				(_assertPretext) ? *_assertPretext : "");
+			if (_outErrorMessage)
+			{
+				*_outErrorMessage = asx::format("Invalid option name \"{}\",{} must start with '-' or '--'",
+					_testName,
+					(_assertPretext) ? *_assertPretext : "");
+			};
+			return false;
 		};
 
 		// For now we will be extremely strict and stupid
@@ -138,24 +160,47 @@ namespace asx
 		if (_textStartPos == _testName.npos)
 		{
 			// Text never begins, for now this will be an invalid option name
-			ASX_FAIL("Invalid option name \"{}\",{} must contain text after '-' or '--'",
-				_testName,
-				(_assertPretext)? *_assertPretext : "");
+			if (_outErrorMessage)
+			{
+				*_outErrorMessage = asx::format("Invalid option name \"{}\",{} must contain text after '-' or '--'",
+					_testName,
+					(_assertPretext) ? *_assertPretext : "");
+			};
+			return false;
 		}
 		else if (_textStartPos > 2)
 		{
 			// More than 2 '-' chars are present
-			ASX_FAIL("Invalid option name \"{}\",{} initial characters must only be '-' or '--'",
-				_testName,
-				(_assertPretext)? *_assertPretext : "");
+			if (_outErrorMessage)
+			{
+				*_outErrorMessage = asx::format("Invalid option name \"{}\",{} initial characters must only be '-' or '--'",
+					_testName,
+					(_assertPretext) ? *_assertPretext : "");
+			};
+			return false;
 		};
 
 		// If there is only one '-' character, the following text must be a single character long
 		if (_textStartPos == 1 && _testName.size() > 2)
 		{
-			ASX_FAIL("Invalid option name \"{}\",{} options starting with '-' must be followed by only a single character",
-				_testName,
-				(_assertPretext)? *_assertPretext : "");
+			if (_outErrorMessage)
+			{
+				*_outErrorMessage = asx::format("Invalid option name \"{}\",{} options starting with '-' must be followed by only a single character",
+					_testName,
+					(_assertPretext) ? *_assertPretext : "");
+			};
+			return false;
+		};
+
+		return true;
+	};
+
+	inline void assert_valid_option_name(std::string_view _testName, const std::string* _assertPretext = nullptr)
+	{
+		std::string _errorText{};
+		if (!check_valid_option_name(_testName, &_errorText, _assertPretext))
+		{
+			ASX_FAIL(_errorText);
 		};
 	};
 
@@ -186,11 +231,12 @@ namespace asx
 					assert_valid_option_name(v, &_pretext);
 				};
 			
-				// Mark optional
+				// Mark as named argument
 				_def.is_optional = true;
+				_def.is_positional = false;
 			};
 		}
-		else if (_def.is_optional)
+		else if (_def.is_optional && !_def.is_positional)
 		{
 			// Pass to valid option name check for error reporting.
 			assert_valid_option_name(_name);
@@ -198,6 +244,38 @@ namespace asx
 
 		// Add to names
 		_def.names.push_back(std::string(_name));
+		return *this;
+	};
+
+	ArgumentParser::ArgumentDefinitionHandle::self_type& ArgumentParser::ArgumentDefinitionHandle::set_nargs(int _count, bool _atLeastOne)
+	{
+		auto& _def = this->get_definition();
+
+		ASX_CHECK(_count > -256 && _count < 256);
+
+		using Mode = ArgumentDefinition::MultiValueMode;
+
+		// Handling based on documentation for this function, see there for details
+		if (_atLeastOne)
+		{
+			ASX_CHECK(_count >= 0);
+			_def.multi_value_mode = Mode::one_or_more;
+			_def.nvals = static_cast<uint8_t>(_count);
+		}
+		else
+		{
+			if (_count >= 0)
+			{
+				_def.multi_value_mode = Mode::fixed;
+				_def.nvals = static_cast<uint8_t>(_count);
+			}
+			else
+			{
+				_def.multi_value_mode = Mode::variable;
+				_def.nvals = static_cast<uint8_t>(-_count);
+			};
+		};
+
 		return *this;
 	};
 };
@@ -215,6 +293,9 @@ namespace asx
 
 		// Container for referring to the positional arguments
 		std::vector<const ArgumentDefinition*> _positionArgumentDefinitions;
+		
+		// How many positional arguments MUST be given
+		size_t _numPositionArgumentsRequired = 0;
 
 		// Container for looking up arguments by name
 		std::unordered_map<std::string, const ArgumentDefinition*> _argumentDefinitionNames;
@@ -231,6 +312,12 @@ namespace asx
 				// Handle positional argument
 				if (_definition.is_positional)
 				{
+					// If this is required, increment required count tracker.
+					if (!_definition.is_optional)
+					{
+						++_numPositionArgumentsRequired;
+					};
+
 					// If we already found an optional positional arg, this must be optional as well
 					if (_foundOptionalPositional)
 					{
@@ -297,11 +384,181 @@ namespace asx
 				};
 			}
 		};
+		
+		// Describes raw option text pulled from the argument strings
+		struct RawArgument
+		{
+			const ArgumentDefinition* definition;
+			std::string name; // the name actual used by the args
+			std::vector<std::string> values;
 
-		auto _parseResult = ParseResult(false, false);
+			void clear()
+			{
+				this->definition = nullptr;
+				this->values.clear();
+			};
+		};
+
+		using MultiValueMode = ArgumentDefinition::MultiValueMode;
+
+		// Storage for finished raw arguments
+		std::vector<RawArgument> _finishedRawArguments{};
+
+		// Storage for the raw argument being parsed
+		RawArgument _parsingRawArgument{};
+		auto& _parsingDefinition = _parsingRawArgument.definition;
+
+		// How many positional args have already been parsed
+		size_t _numParsedPositionalArgs = 0;
+
+		// Parse args
+		for (auto it = _args.begin();;)
+		{
+			// Handle end of args
+			if (it == _args.end())
+			{
+				// Check if we finished last parse
+				if (_parsingDefinition)
+				{
+					if (_parsingDefinition->is_enough_values(static_cast<uint8_t>(_parsingRawArgument.values.size())))
+					{
+						// OK, add to finished raw args
+						_finishedRawArguments.push_back(_parsingRawArgument);
+						_parsingRawArgument.clear();
+						++it;
+					}
+					else
+					{
+						// Missing required values
+						auto _errorText = asx::format("Argument \"{}\" expects {} values but only {} were provided",
+							_parsingRawArgument.name,
+							_parsingDefinition->nvals,
+							_parsingRawArgument.values.size());
+						return ParseResult(true, true, std::move(_errorText));
+					};
+				};
+
+				// Break from loop
+				break;
+			};
+
+			auto& _arg = *it;
+
+			// If we aren't currently parsing an argument we need to start parsing whatever we are looking at
+			if (!_parsingDefinition)
+			{
+				// Check if this is a named or positional argument
+				if (_arg.starts_with('-'))
+				{
+					std::string _errorText{};
+					if (!check_valid_option_name(_arg, &_errorText))
+					{
+						// Invalid option specified
+						return ParseResult(true, true, std::move(_errorText));
+					};
+
+					// Find matching definition
+					auto it = _argumentDefinitionNames.find(std::string(_arg));
+					if (it == _argumentDefinitionNames.end())
+					{
+						// Option not defined
+						auto _errorText = asx::format("Found unrecognized option \"{}\"", _arg);
+						return ParseResult(true, true, std::move(_errorText));
+					};
+
+					// Definition currently being parsed
+					auto _definition = it->second;
+
+					// We have an option name, set it to the current definition being parsed
+					_parsingDefinition = _definition;
+					_parsingRawArgument.name = _arg;
+				}
+				else
+				{
+					// Argument must be positional, see how many we have left
+					if (_numParsedPositionalArgs >= _positionArgumentDefinitions.size())
+					{
+						// Too many positional arguments
+						auto _errorText = asx::format("Got too many positional arguments \"{}\", expected at least {}",
+							_arg, _numPositionArgumentsRequired);
+						return ParseResult(true, true, std::move(_errorText));
+					};
+
+					// Current positional argument definition
+					auto _definition = _positionArgumentDefinitions.at(_numParsedPositionalArgs);
+
+					// Increment so next positional arg is in the right spot
+					++_numParsedPositionalArgs;
+
+					// Set to start parsing
+					_parsingRawArgument.definition = _definition;
+					_parsingRawArgument.name = _definition->metalabel;
+				};
+			};
+
+			// Handle writing values to the definition
+			if (_parsingDefinition)
+			{
+				// Check if we have already finished parsing this one
+				if (_parsingDefinition->multi_value_mode == MultiValueMode::fixed &&
+					_parsingDefinition->nvals == _parsingRawArgument.values.size())
+				{
+					// Finished parse of current definition, clear it out and continue to next raw arg
+					_finishedRawArguments.push_back(_parsingRawArgument);
+					_parsingRawArgument.clear();
+				}
+				else
+				{
+					// Check if this is the start of a new option
+					if (check_valid_option_name(_arg, nullptr))
+					{
+						// Check if the current argument is fixed as that would mean we didn't get enough values
+						if (_parsingRawArgument.definition->multi_value_mode == MultiValueMode::fixed)
+						{
+							// Error here, we are missing some required values
+							auto _errorText = asx::format("Argument \"{}\" expects {} values but only {} were provided",
+								_parsingRawArgument.name,
+								_parsingDefinition->nvals,
+								_parsingRawArgument.values.size());
+							return ParseResult(true, true, std::move(_errorText));
+						}
+						else
+						{
+							// Variable, check if this is in at least one mode
+							if (_parsingDefinition->multi_value_mode == MultiValueMode::one_or_more)
+							{
+								if (_parsingRawArgument.values.empty())
+								{
+									// Error here, we are missing any values
+									auto _errorText = asx::format("Argument \"{}\" expects at least one value but none were provided",
+										_parsingRawArgument.name);
+									return ParseResult(true, true, std::move(_errorText));
+								}
+							};
+
+							// OK, clear out old current parse
+							_finishedRawArguments.push_back(_parsingRawArgument);
+							_parsingRawArgument.clear();
+						};
+					}
+					else
+					{
+						// Add value to current argument being parsed
+						_parsingRawArgument.values.push_back(std::string(_arg));
+					};
+				};
+			};
+
+			// Continue to the next argument only if we have one set to be parsed.
+			if (_parsingDefinition)
+			{
+				++it;
+			};
+		};
 
 
-		return _parseResult;
+
+		return ParseResult(false, false);
 	};
 	ArgumentParser::ParseResult ArgumentParser::parse_args(std::span<const std::string_view> _args)
 	{
@@ -379,7 +636,8 @@ namespace asx
 
 		this->add_argument("help", "Displays the help message")
 			.add_name("-h")
-			.add_name("--help");
+			.add_name("--help")
+			.set_nargs(0);
 
 	};
 

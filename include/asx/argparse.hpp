@@ -28,6 +28,39 @@ namespace asx
 		struct ArgumentDefinition
 		{
 			/**
+			 * @brief Enumerates the different modes that the argument can use for handling values.
+			*/
+			enum class MultiValueMode : uint8_t
+			{
+				/**
+				 * @brief Number of values provided must match 'nvals'
+				*/
+				fixed,
+
+				/**
+				 * @brief Number of values provided can be no greater than `nvals`.
+				*/
+				variable,
+
+				/**
+				 * @brief Number of values provided must be at least one but additional values can be given.
+				 * The total number of values provided must be no greater than `nvals`.
+				*/
+				one_or_more,
+			};
+
+			/**
+			 * @brief Checks if a certain number of values is enough to satisfy the Argument.
+			 * 
+			 * Variable args will still return true as this only checks if it has enough values
+			 * given, not that there is remaining space.
+			 * 
+			 * @param _count Number of values to check.
+			 * @return True if argument would be satisfied by `_count` values, false otherwise.
+			*/
+			bool is_enough_values(uint8_t _count) const;
+
+			/**
 			 * @brief Optional label used to refer to the argument by a string.
 			*/
 			std::string label;
@@ -54,6 +87,16 @@ namespace asx
 			std::string description;
 
 			/**
+			 * @brief Behavior depends on the `multi_value_mode`. See the `MultiValueMode` enum class for details.
+			*/
+			uint8_t nvals = 1;
+
+			/**
+			 * @brief The mode used to specify how value quantity is handled for this argument.
+			*/
+			MultiValueMode multi_value_mode = MultiValueMode::fixed;
+
+			/**
 			 * @brief Set to true if argument doesn't have to be specified.
 			*/
 			bool is_optional = false;
@@ -61,8 +104,11 @@ namespace asx
 			/**
 			 * @brief Set to true if argument is positional. Positional arguments can be
 			 * optional if all of the optional positional arguments are at the end.
+			 * 
+			 * Defaults to true.
 			*/
-			bool is_positional = false;
+			bool is_positional = true;
+
 		};
 
 	public:
@@ -644,7 +690,25 @@ namespace asx
 			*/
 			self_type& add_name(std::string_view _name);
 
-
+			/**
+			 * @brief Sets the number of values the argument takes. See below for details.
+			 *
+			 * If `_atLeastOnce` is true, `_count` specifies the maximum number of values this
+			 * argument can consume but at least one value MUST be parsed. `_count` MUST be 
+			 * greater than or equal to 0.
+			 *
+			 * If `_atLeastOnce` is false:
+			 *	If `_count` is 0 then no values can be provided to this argument.
+			 *  If `_count` is greater than 0, it specifies the required number of values for this argument.
+			 *  If `_count` is less than 0, the argument can take any number of arguments (up to `_count * -1`).
+			 *
+			 * `_count` MUST be within the range (-256:256)
+			 * 
+			 * @param _count See above docs for info.
+			 * @param _atLeastOne See above docs for info.
+			 * @return This definition handle.
+			*/
+			self_type& set_nargs(int _count, bool _atLeastOne = false);
 
 
 
