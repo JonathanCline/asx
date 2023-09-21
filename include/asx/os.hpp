@@ -26,6 +26,22 @@ namespace asx
 	 * @brief Cleanup function that (may) preform OS specific functionality.
 	*/
 	void os_application_cleanup();
+
+	/**
+	 * @brief Automatically runs the application cleanup function on destruction.
+	*/
+	struct OSApplicationCleanupGuard final
+	{
+		explicit OSApplicationCleanupGuard() = default;
+		OSApplicationCleanupGuard(const OSApplicationCleanupGuard&) = delete;
+		OSApplicationCleanupGuard& operator=(const OSApplicationCleanupGuard&) = delete;
+		OSApplicationCleanupGuard(OSApplicationCleanupGuard&&) = delete;
+		OSApplicationCleanupGuard& operator=(OSApplicationCleanupGuard&&) = delete;
+		~OSApplicationCleanupGuard()
+		{
+			asx::os_application_cleanup();
+		};
+	};
 };
 
 namespace asx
@@ -53,4 +69,11 @@ namespace asx
 	 * @return DPI value on success, -1 on error.
 	*/
 	int get_system_dpi();
+
+	/**
+	 * @brief Attempts to open a file path in the user's file explorer.
+	 * @param _path File path.
+	 * @return True on good open, false otherwise.
+	*/
+	bool open_file_path_in_file_explorer(const std::string& _path);
 };

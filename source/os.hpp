@@ -11,6 +11,7 @@
 #include <Windows.h>
 #include <DbgHelp.h>
 #include <WinUser.h>
+#include <shellapi.h>
 #pragma comment(lib, "DbgHelp")
 #endif
 

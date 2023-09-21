@@ -251,4 +251,24 @@ namespace asx
 #error "Implement me!!!!"
 #endif
 	};
+
+	bool open_file_path_in_file_explorer(const std::string& _path)
+	{
+#ifdef ASX_OS_WINDOWS
+		auto _instance = ShellExecuteA(NULL, "open", _path.c_str(), NULL, NULL, SW_SHOWDEFAULT);
+		if ((INT_PTR)_instance <= 32)
+		{
+			// Failure
+			ASX_LOG_ERROR("Failed to open file in file explorer");
+			return false;
+		}
+		else
+		{
+			ASX_LOG_INFO("Opened path \"{}\" in system file explorer", _path);
+			return true;
+		};
+#else
+#error "Implement me!!!!"
+#endif
+	};
 }
