@@ -267,15 +267,8 @@ namespace asx
 
 };
 
-#ifdef ASX_OS_WINDOWS
-	#define ASX_LOG_INFO(fmt, ...) ::asx::log_info(fmt, __VA_ARGS__)
-	#define ASX_LOG_WARN(fmt, ...) ::asx::log_warn(fmt, __VA_ARGS__)
-	#define ASX_LOG_ERROR(fmt, ...) ::asx::log_error(::asx::get_stack_trace(), fmt, __VA_ARGS__)
-	#define ASX_LOG_FATAL(fmt, ...) ::asx::log_fatal_error(::asx::get_stack_trace(), fmt, __VA_ARGS__)
-#else
-	#define ASX_LOG_INFO(fmt, ...) ::asx::log_info(fmt __VA_OPT__(,) __VA_ARGS__)
-	#define ASX_LOG_WARN(fmt, ...) ::asx::log_warn(fmt __VA_OPT__(,) __VA_ARGS__)
-	#define ASX_LOG_ERROR(fmt, ...) ::asx::log_error(::asx::get_stack_trace(), fmt __VA_OPT__(,) __VA_ARGS__)
-	#define ASX_LOG_FATAL(fmt, ...) ::asx::log_fatal_error(::asx::get_stack_trace(), fmt __VA_OPT__(,) __VA_ARGS__)
-#endif
+#define ASX_LOG_INFO(fmt, ...) ::asx::log_info(fmt __VA_OPT__(,) __VA_ARGS__)
+#define ASX_LOG_WARN(fmt, ...) ::asx::log_warn(fmt __VA_OPT__(,) __VA_ARGS__)
+#define ASX_LOG_ERROR(fmt, ...) ::asx::log_error(::asx::get_stack_trace(), fmt __VA_OPT__(,) __VA_ARGS__)
+#define ASX_LOG_FATAL(fmt, ...) ::asx::log_fatal_error(::asx::get_stack_trace(), fmt __VA_OPT__(,) __VA_ARGS__)
 
