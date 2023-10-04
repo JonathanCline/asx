@@ -42,7 +42,6 @@ namespace asx
 		else
 		{
 			_data.sym_init = _result;
-			ASX_LOG_INFO("Initialized WINAPI debug help lib");
 		};
 #endif
 	};
