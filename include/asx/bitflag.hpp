@@ -32,6 +32,23 @@ namespace asx
 
 		constexpr friend static bool operator==(const basic_bitflag& lhs, const basic_bitflag& rhs) noexcept = default;
 
+		constexpr friend static bool operator==(const basic_bitflag& lhs, const enum_type& rhs) noexcept
+		{
+			return lhs.value_ == rhs;
+		};
+		constexpr friend static bool operator==(const enum_type& lhs, const basic_bitflag& rhs) noexcept
+		{
+			return lhs == rhs.value_;
+		};
+		constexpr friend static bool operator!=(const basic_bitflag& lhs, const enum_type& rhs) noexcept
+		{
+			return lhs.value_ != rhs;
+		};
+		constexpr friend static bool operator!=(const enum_type& lhs, const basic_bitflag& rhs) noexcept
+		{
+			return lhs != rhs.value_;
+		};
+
 		constexpr friend static basic_bitflag operator|(const basic_bitflag& lhs, const basic_bitflag& rhs) noexcept
 		{
 			return basic_bitflag(static_cast<enum_type>(jc::to_underlying(lhs.value_) | jc::to_underlying(rhs.value_)));

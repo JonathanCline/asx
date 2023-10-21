@@ -56,7 +56,24 @@ namespace asx
 			std::string _fmt = "Time Profile Results :\n Total = {}\n ";
 			for (auto& v : this->laps_)
 			{
-				_fmt.append(asx::format("{} = {}\n ", v.name, v.time));
+				// Defaults to seconds
+				double _value = v.time.count();
+				const char* _unit = "s";
+
+				if (v.time.count() < 0.001)
+				{
+					// Microseconds
+					_value *= 1'000'000.0;
+					_unit = "us";
+				}
+				else if (v.time.count() < 1.0)
+				{
+					// Milliseconds
+					_value *= 1'000.0;
+					_unit = "ms";
+				};
+
+				_fmt.append(asx::format("{} = {} {}\n ", v.name, _value, _unit));
 			};
 			ASX_LOG_INFO(_fmt, this->total_);
 		};
